@@ -222,8 +222,8 @@ const ROLE_ALIASES = new Map<string, RoleId>([
 ]);
 
 const discordToken = readRequiredEnv("DISCORD_TOKEN");
-const applicationClientId = readRequiredEnv("CLIENT_ID");
-const guildId = process.env.GUILD_ID;
+const applicationClientId = readRequiredSnowflakeEnv("CLIENT_ID");
+const guildId = readOptionalSnowflakeEnv("GUILD_ID");
 const lobbyChannelName = process.env.LOBBY_CHANNEL_NAME ?? "jinro-lobby";
 const roomCategoryPrefix = process.env.ROOM_CATEGORY_PREFIX ?? "jinro";
 const logDir = process.env.LOG_DIR ?? "data/logs";
@@ -2035,6 +2035,33 @@ function readRequiredEnv(key: string): string {
     throw new Error(`${key} is required. Copy .env.example to .env first.`);
   }
   return value;
+}
+
+function readRequiredSnowflakeEnv(key: string): string {
+  const value = readRequiredEnv(key);
+  if (!isDiscordSnowflake(value)) {
+    throw new Error(`${key} must be a Discord numeric ID. Current value: "${value}"`);
+  }
+  return value;
+}
+
+function readOptionalSnowflakeEnv(key: string): string | undefined {
+  const value = process.env[key]?.trim();
+  if (!value) {
+    return undefined;
+  }
+
+  if (!isDiscordSnowflake(value)) {
+    throw new Error(
+      `${key} must be a Discord numeric server ID, or remove this line to register global commands. Current value: "${value}"`,
+    );
+  }
+
+  return value;
+}
+
+function isDiscordSnowflake(value: string): boolean {
+  return /^\d{15,25}$/.test(value.trim());
 }
 
 function readPositiveIntEnv(key: string, fallback: number): number {
